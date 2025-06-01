@@ -1,0 +1,127 @@
+Document Number: PXXXXR0
+Date: 2025-06-01
+Audience: EWG, SG7, SG21, SG23
+Reply-to: E. S. Himers <Z5515zwy@outlook.com>
+
+I. Introduction
+    This proposal introduces a new contextual-keyword assure that allows callers to declare parament Constraints at function call sites. can utilizing these Constraints to optimize function calling. (e.g. removing branches) Violations result in undefined behavior. Analogous to [[assume]].
+
+II. Motivation and Scope
+    Motivation
+        check-ups of function definition sites is unnessary at some call sites, but compilers may preserve check-ups for them. Sometimes we need more performance optimizations but we can't do many optimizations such as built-in functions and third-party libraries.
+        e.g. Lighting computing will call sqrt many times.
+        If sqrt(double _X) like this:
+            double __fastcall sqrt(double _X)
+            {
+                if(_X < 0.0)
+                {
+                    return std::numeric_limits<double>::infinity();
+                }
+                else
+                {
+                    // ...
+                }
+            }
+            // asm:
+            /*
+                _sqrt:
+                    pxor xmm1, xmm1
+                    ucomisd xmm0, xmm1
+                    jl _sqrt__Xl0
+                    ; ...
+                _sqrt__Xl0:
+                    movaps xmm0, 0x7FF8000000000000
+                    ret
+            */
+        In lighting computing, _X is always equals zero or greater than zero, so branch of if(_X < 0.0) is never performed there, but compiler may not remove it.
+        sqrt(d assure(d >= 0)) may generates
+            _sqrt:
+                pxor xmm1, xmm1
+                ucomisd xmm0, xmm1
+                jl _sqrt__Xl0
+            _sqrt_sometime:
+                ; ...
+                ret
+            _sqrt__Xl0:
+                movaps xmm0, 0x7FF8000000000000
+                ret
+            ;...
+            movass xmm0, [somewhere]
+            call _sqrt_simetime
+        or inline call or a new function of sqrt, we needn't program another sqrt for this call site and compiler can optimize program better.
+
+    Scope
+        Target Users:   Developers requiring peak performance (HPC, game engines)
+        Skill Level:    Intermediate to expert (understanding UB implications)
+        Existing Practice:
+            Compiler performation optimizations
+            Programming more codes
+III. Impact On the Standard
+    Dependencies:       Compiler performance optimizations (may be ignored on DEBUG mode)
+    Pure Extension:     No breaking changes
+    Implementability:   Requires compiler frontend and middle-end support (parsing and optimization)
+
+IV. Design Decisions
+    Syntax
+        func(para1 assure(const-bool-expr(INPUT: { para1, const paras... })), paras...)
+
+        Rejected Alternatives:
+            func(paras...) assure(const-bool-expr(INPUT: const paras...))
+                makes compiler implementation difficult.
+        Semantics: 
+            Constraints are purely caller-to-compiler optimization hints.
+            Expressions must be side-effect-free and dependent only on caller-visible state.
+            Expressions should be true, or function calling has undefined behavior
+        Alternative Considered:
+            Runtime assertions (for security) rejected due to performance impact.
+
+    Ecosystem Impact
+        User:           Performance gains with constraints
+        Implementers:   Medium or low implementation effort
+        STL:            Greater room for optimization
+
+V. Technical Specifications
+    Grammar Modifications
+        Original
+            call-expression: <function> "(" [[other] <identifier>], { ... } ")"
+        Modified
+            call-expression: <function> "(" [[other] <identifier> ["assure(" <const-bool-expr> ")"]], { ... } ")"
+    Requirements
+        <const-bool-expr>:
+            1. Have bool type
+            2. Contain no side effects
+            3. Reference only caller-visible entities
+        Constraints propagate to callee after inlining:
+            int callee(int i)
+            {
+                return i > 0 ? i * 2 : 0;
+            }
+            int medium_caller(int i)
+            {
+                return callee(i) - 1;
+            }
+            int caller(unsigned short input)
+            {
+                return medium_caller(static_cast<int>(input) assure(i >= 0));
+                // inline:
+                /*
+                    return callee(static_cast<int>(input) assure(i >= 0)) - 1;
+                    return (static_cast<int>(input) * 2) - 1;
+                */
+            }
+    Security
+        To avoid undefined behaviors, assure is not recommended for functions used Contracts, it may causes more security issues.
+        Mitigations:
+            a - Use function modifier intact (new) to disable assure on it.
+            b - Use function modifier lenient (new) to enable assure on it.
+            c - Use static_assert to check assure.
+            d - Disable assure by default if function uses Contracts (use lenient to enable).
+
+VI. Acknowledgements
+    nullptr
+
+VII. References
+    C Standard: assert macro
+    N1720:      static_assert Proposal
+    P1774R8:    [[assume]] Proposal
+    P2900R7:    Contracts Proposal
