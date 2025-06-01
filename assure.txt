@@ -8,7 +8,7 @@ I. Introduction
 
 II. Motivation and Scope
     Motivation
-        check-ups of function definition sites is unnessary at some call sites, but compilers may preserve check-ups for them. Sometimes we need more performance optimizations but we can't do many optimizations such as built-in functions and third-party libraries.
+        Check-ups of function definition sites is unnessary at some call sites, but compilers may preserve check-ups for them. Sometimes we need more performance optimizations but we can't do many optimizations such as built-in functions and third-party libraries.
         e.g. Lighting computing will call sqrt many times.
         If sqrt(double _X) like this:
             double __fastcall sqrt(double _X)
