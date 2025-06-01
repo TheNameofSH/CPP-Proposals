@@ -46,7 +46,7 @@ II. Motivation and Scope
                 movsd xmm0, 0x7FF8000000000000
                 ret
             ;...
-            movass xmm0, [somewhere]
+            movsd xmm0, [somewhere]
             call _sqrt_simetime
         or inline call or a new function of sqrt, we needn't program another sqrt for this call site and compiler can optimize program better.
 
