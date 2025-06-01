@@ -30,7 +30,7 @@ II. Motivation and Scope
                     jl _sqrt__Xl0
                     ; ...
                 _sqrt__Xl0:
-                    movaps xmm0, 0x7FF8000000000000
+                    movsd xmm0, 0x7FF8000000000000
                     ret
             */
         In lighting computing, _X is always equals zero or greater than zero, so branch of if(_X < 0.0) is never performed there, but compiler may not remove it.
@@ -43,7 +43,7 @@ II. Motivation and Scope
                 ; ...
                 ret
             _sqrt__Xl0:
-                movaps xmm0, 0x7FF8000000000000
+                movsd xmm0, 0x7FF8000000000000
                 ret
             ;...
             movass xmm0, [somewhere]
