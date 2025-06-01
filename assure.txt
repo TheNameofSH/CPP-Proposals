@@ -4,7 +4,7 @@ Audience: EWG, SG7, SG21, SG23
 Reply-to: E. S. Himers <Z5515zwy@outlook.com>
 
 I. Introduction
-    This proposal introduces a new contextual-keyword assure that allows callers to declare parament Constraints at function call sites. can utilizing these Constraints to optimize function calling. (e.g. removing branches) Violations result in undefined behavior. Analogous to [[assume]].
+    This proposal introduces a new contextual-keyword assure that allows callers to declare parament constraints at function call sites. can utilizing these constraints to optimize function calling. (e.g. removing branches) Violations result in undefined behavior. Analogous to [[assume]].
 
 II. Motivation and Scope
     Motivation
